@@ -33,6 +33,30 @@ import { useState } from "react";
 const FileUpload = ({ setFileUploaded }) => {
   const [error, setError] = useState("");
 
+  // List of supported MIME types by the Google Generative AI API
+  const supportedMimeTypes = [
+    "text/plain",          // .txt
+    "text/csv",            // .csv
+    "application/pdf",     // .pdf
+    "image/jpeg",          // .jpg, .jpeg
+    "image/png",           // .png
+    "image/webp",          // .webp
+    "image/heic",          // .heic
+    "image/heif"           // .heif
+  ];
+
+  // Function to check if file type is supported
+  const isSupportedFileType = (fileType, extension) => {
+    // Direct MIME type check
+    if (supportedMimeTypes.includes(fileType)) {
+      return true;
+    }
+    
+    // Fallback to extension check if MIME type is not recognized
+    const supportedExtensions = ["pdf", "csv", "txt", "jpg", "jpeg", "png", "webp", "heic", "heif"];
+    return supportedExtensions.includes(extension.toLowerCase());
+  };
+
   const handleFileUpload = async (event) => {
     try {
       setError("");
@@ -44,6 +68,13 @@ const FileUpload = ({ setFileUploaded }) => {
       const fileName = file.name;
       const fileExtension = fileName.split('.').pop().toLowerCase();
       
+      // Check if file type is supported
+      if (!isSupportedFileType(fileType, fileExtension)) {
+        setError(`File type not supported by the AI API: ${fileExtension}. 
+                  Supported formats are: PDF, CSV, TXT, JPG, PNG, WEBP, HEIC.`);
+        return;
+      }
+      
       // Handle file based on type
       const fileArrayBuffer = await file.arrayBuffer();
       const fileBase64 = Buffer.from(fileArrayBuffer).toString("base64");
@@ -52,12 +83,10 @@ const FileUpload = ({ setFileUploaded }) => {
       const isDocument = 
         fileType.includes("pdf") || 
         fileType.includes("csv") || 
-        fileType.includes("doc") || 
-        fileType.includes("docx") ||
+        fileType.includes("txt") ||
         fileExtension === "pdf" ||
         fileExtension === "csv" ||
-        fileExtension === "doc" ||
-        fileExtension === "docx";
+        fileExtension === "txt";
       
       // Create the file object with all necessary information
       const fileObject = {
@@ -81,10 +110,13 @@ const FileUpload = ({ setFileUploaded }) => {
       <h2>Get Started</h2>
       <input
         type="file"
-        accept=".pdf, .jpg, .jpeg, .png, .csv, .doc, .docx"
+        accept=".pdf, .jpg, .jpeg, .png, .csv, .txt"
         onChange={handleFileUpload}
       />
       {error && <p className="error-message">{error}</p>}
+      <p className="supported-formats">
+        Supported formats: PDF, CSV, TXT, JPG/JPEG, PNG
+      </p>
     </section>
   );
 };
